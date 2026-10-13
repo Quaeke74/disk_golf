@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c4122f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Discgolf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Discgolf Scorer</title>
+<style>
+:root{
+  /* MHH-Rot: Hauptfarbe, bei Bedarf hier anpassen */
+  --brand:#c4122f;
+  --bg:#f5f4f4;--card:#ffffff;--text:#1d1a1b;--muted:#6b6466;--line:#e3dfe0;
+  --accent:var(--brand);--accent-ink:#ffffff;--accent-soft:#f6e3e6;
+  --good:#16794a;--good-soft:#dcf2e5;--bad:#9a6a00;--bad-soft:#fbf0d2;
+  --danger:#b42318;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#141213;--card:#1f1b1c;--text:#efeaeb;--muted:#a59c9e;--line:#352e30;
+    --accent:#e2465e;--accent-ink:#ffffff;--accent-soft:#3d2025;
+    --good:#56c98f;--good-soft:#173527;--bad:#e3b341;--bad-soft:#3a2f12;
+    --danger:#f4796b;--shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+  overscroll-behavior-y:none;
+}
+input,select,textarea{-webkit-user-select:text;user-select:text;font:inherit;color:inherit}
+main{max-width:640px;margin:0 auto;padding:12px 16px 24px}
+h1{font-size:24px;margin:8px 0 14px}
+h2{font-size:17px;margin:22px 0 8px;color:var(--muted);font-weight:600}
+h3{font-size:16px;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid var(--line);min-height:52px}
+.li:first-child{border-top:0}
+.li .grow{flex:1;min-width:0}
+.li.tap:active{background:var(--accent-soft)}
+.chev{color:var(--muted);font-size:20px}
+.btn{
+  appearance:none;border:0;border-radius:12px;padding:13px 16px;font:600 16px/1.2 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:var(--accent);color:var(--accent-ink);min-height:48px;cursor:pointer;
+}
+.btn:disabled{opacity:.4}
+.btn.sec{background:var(--accent-soft);color:var(--text)}
+.btn.ghost{background:transparent;color:var(--accent);padding:10px 8px;min-height:40px}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.block{display:block;width:100%}
+.btn.sm{padding:8px 12px;min-height:36px;font-size:14px}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input.in,select.in{
+  width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:16px;
+}
+.seg{display:flex;background:var(--accent-soft);border-radius:11px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font:600 14px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text)}
+.seg button.on{background:var(--card);box-shadow:var(--shadow)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:1px solid var(--line);background:var(--card);border-radius:22px;padding:10px 14px;font:500 15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color:var(--text);display:flex;align-items:center;gap:8px;min-height:44px
+}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent-ink);color:var(--accent);font-size:12px;font-weight:700}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--accent-soft);color:var(--text)}
+.badge.live{background:var(--bad-soft);color:var(--bad)}
+
+/* Tabs */
+nav#tabs{
+  position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:10
+}
+nav#tabs button{
+  flex:1;border:0;background:transparent;color:var(--muted);font:600 12px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;padding:6px 2px;
+  display:flex;flex-direction:column;align-items:center;gap:3px
+}
+nav#tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav#tabs button.on{color:var(--accent)}
+
+/* Bahn-Ansicht */
+.holehead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:4px 0 8px}
+.holehead .big{font-size:30px;font-weight:800;line-height:1}
+.holehead .meta{text-align:right}
+.parpill{display:inline-block;background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:10px;padding:4px 10px;font-size:15px}
+.note{background:var(--accent-soft);border-radius:10px;padding:8px 12px;font-size:14px;margin-bottom:10px}
+.strip{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip button{
+  flex:0 0 auto;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+  font:600 14px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text)
+}
+.strip button.done{background:var(--accent-soft);border-color:var(--accent-soft)}
+.strip button.cur{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0}
+.pinfo{flex:1;min-width:0}
+.pn{font-weight:650;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps{font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:8px}
+.step{
+  width:52px;height:52px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--text);
+  font:500 28px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center
+}
+.step:active{transform:scale(.94)}
+.val{
+  width:56px;height:56px;border-radius:14px;border:2px solid var(--line);background:var(--card);
+  font:800 26px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text)
+}
+.val.empty{color:var(--muted);border-style:dashed;font-weight:500}
+.val.good{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.val.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.navbar{display:flex;gap:10px;margin-top:12px}
+.navbar .btn{flex:1}
+
+/* Tabellen */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 6px;text-align:center;border-top:1px solid var(--line);white-space:nowrap}
+thead th{border-top:0;color:var(--muted);font-weight:600;font-size:12px}
+th.l,td.l{text-align:left;padding-left:12px;position:sticky;left:0;background:var(--card)}
+td.sum{font-weight:700}
+td.cg{background:var(--good-soft);color:var(--good);font-weight:700}
+td.cb{background:var(--bad-soft);color:var(--bad)}
+
+/* Ranking */
+.rk{display:flex;align-items:center;gap:12px}
+.rkn{
+  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;
+  background:var(--accent-soft);flex:0 0 auto
+}
+.rkn.r1{background:#d9a514;color:#fff}.rkn.r2{background:#9aa3ad;color:#fff}.rkn.r3{background:#b0703a;color:#fff}
+.rkv{font-size:22px;font-weight:800;text-align:right}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+.bar>i{display:block;height:100%}
+.dist{display:flex;height:8px;border-radius:4px;overflow:hidden;min-width:70px}
+.dist i{display:block;height:100%}
+
+.banner{background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner b{display:block;margin-bottom:2px}
+.stepnum{display:flex;align-items:center;gap:8px}
+.stepnum .step{width:40px;height:40px;font-size:22px}
+.stepnum b{min-width:28px;text-align:center;font-size:18px}
+.hgrid{display:grid;grid-template-columns:34px 1fr;gap:8px 10px;align-items:center}
+.hgrid .hn{font-weight:800;font-size:18px;text-align:center}
+.empty-state{text-align:center;padding:30px 10px;color:var(--muted)}
+
+#toast{
+  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;
+  transition:.25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="tabs"></nav>
+<div id="toast"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+const KEY = 'dg-scorer-v1';
+const MAX_PLAYERS = 8;
+let S;
+const ui = {
+  tab: 'play', sub: null, view: 'hole', hole: 0,
+  setup: null, rankSeg: 'players', rankCourse: null, rankPeriod: null,
+  wake: null, hideInstall: false
+};
+
+/* ---------- Hilfsfunktionen ---------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(iso){ if(!iso) return ''; const [y,m,d] = iso.slice(0,10).split('-'); return `${d}.${m}.${y}`; }
+function fmtRel(x, dec){
+  if (x == null || isNaN(x)) return '–';
+  const v = dec ? Math.round(x*10)/10 : x;
+  if (v === 0) return dec ? '±0,0' : '±0';
+  const a = dec ? Math.abs(v).toFixed(1).replace('.', ',') : String(Math.abs(v));
+  return (v > 0 ? '+' : '−') + a;
+}
+const fmtNum = (x, d=1) => x == null ? '–' : x.toFixed(d).replace('.', ',');
+const relClass = x => x < 0 ? 'good' : x > 0 ? 'bad' : '';
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200); }
+
+/* ---------- Daten ---------- */
+function defaultState(){
+  const mk = n => Array.from({length:n}, () => ({par:3, len:'', note:''}));
+  return {
+    version: 1,
+    settings: { bestX: 5 },
+    courses: [
+      { id: uid(), name: 'Roderbruch Nord', holes: mk(15) },
+      { id: uid(), name: 'Grünzug Vahrenheide', holes: mk(9) }
+    ],
+    players: [], rounds: [], activeRoundId: null,
+    lastBackup: null, roundsSinceBackup: 0
+  };
+}
+function migrate(){
+  S.settings = S.settings || {}; if (!S.settings.bestX) S.settings.bestX = 5;
+  S.courses = S.courses || []; S.players = S.players || []; S.rounds = S.rounds || [];
+  if (S.roundsSinceBackup == null) S.roundsSinceBackup = 0;
+}
+function load(){
+  try { const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : defaultState(); }
+  catch(e){ S = defaultState(); }
+  migrate();
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ toast('Speichern fehlgeschlagen: ' + e.message); }
+}
+const course = id => S.courses.find(c => c.id === id);
+const player = id => S.players.find(p => p.id === id);
+const pname = id => player(id)?.name ?? 'Unbekannt';
+const activeRound = () => S.rounds.find(r => r.id === S.activeRoundId && !r.finished) || null;
+
+function roundStats(r, pid){
+  let strokes = 0, rel = 0, played = 0;
+  r.pars.forEach((par, i) => { const v = r.scores[pid][i]; if (v != null){ strokes += v; rel += v - par; played++; } });
+  return { strokes, rel, played, complete: played === r.pars.length };
+}
+const roundComplete = r => r.playerIds.every(p => roundStats(r, p).complete);
+function holeDone(r, i){ return r.playerIds.every(p => r.scores[p][i] != null); }
+
+/* ---------- Auswertung ---------- */
+function periods(){
+  const years = new Set([String(new Date().getFullYear())]);
+  S.rounds.forEach(r => years.add(r.date.slice(0,4)));
+  const list = [...years].sort().reverse().map(y => ({key:'y'+y, label:'Saison '+y}));
+  list.push({key:'12m', label:'Letzte 12 Monate'}, {key:'all', label:'Gesamter Zeitraum'});
+  return list;
+}
+function periodFilter(key){
+  if (key === 'all') return () => true;
+  if (key === '12m'){ const d = new Date(); d.setFullYear(d.getFullYear()-1); const lim = d.toISOString().slice(0,10); return r => r.date >= lim; }
+  const y = key.slice(1); return r => r.date.startsWith(y);
+}
+function playerResults(courseId, period){
+  const f = periodFilter(period), res = {};
+  S.rounds.filter(r => r.finished && r.courseId === courseId && f(r)).forEach(r => {
+    r.playerIds.forEach(pid => {
+      const st = roundStats(r, pid); if (!st.complete) return;
+      (res[pid] = res[pid] || []).push({ round: r, rel: st.rel, strokes: st.strokes });
+    });
+  });
+  return res;
+}
+function ranking(courseId, period){
+  const X = S.settings.bestX, res = playerResults(courseId, period), ranked = [], pending = [];
+  Object.entries(res).forEach(([pid, list]) => {
+    const sorted = [...list].sort((a,b) => a.rel - b.rel || a.round.date.localeCompare(b.round.date));
+    const best = sorted.slice(0, X);
+    const avgBest = best.reduce((s,x) => s + x.rel, 0) / best.length;
+    const avgAll = list.reduce((s,x) => s + x.rel, 0) / list.length;
+    const e = { pid, n: list.length, avgBest, avgAll, best: sorted[0] };
+    (list.length >= X ? ranked : pending).push(e);
+  });
+  ranked.sort((a,b) => a.avgBest - b.avgBest || b.n - a.n);
+  let rank = 0, prev = null;
+  ranked.forEach((e,i) => { const k = Math.round(e.avgBest*100); if (k !== prev){ rank = i+1; prev = k; } e.rank = rank; });
+  pending.sort((a,b) => b.n - a.n || a.avgAll - b.avgAll);
+  return { ranked, pending, X };
+}
+function holeStats(courseId, period, pid){
+  const f = periodFilter(period), c = course(courseId), n = c.holes.length;
+  const acc = Array.from({length:n}, () => ({sum:0, cnt:0, rel:0, b:0, p:0, o:0}));
+  S.rounds.filter(r => r.finished && r.courseId === courseId && f(r)).forEach(r => {
+    (pid ? [pid] : r.playerIds).filter(p => r.playerIds.includes(p)).forEach(p => {
+      r.pars.forEach((par, i) => {
+        if (i >= n) return; const v = r.scores[p][i]; if (v == null) return;
+        const a = acc[i]; a.sum += v; a.cnt++; a.rel += v - par;
+        if (v < par) a.b++; else if (v === par) a.p++; else a.o++;
+      });
+    });
+  });
+  return acc.map((a,i) => ({ i, par: c.holes[i].par, avg: a.cnt ? a.sum/a.cnt : null, rel: a.cnt ? a.rel/a.cnt : null, cnt: a.cnt, b:a.b, p:a.p, o:a.o }));
+}
+
+/* ---------- Bildschirm an lassen ---------- */
+async function updateWake(){
+  const need = !!activeRound() && ui.tab === 'play' && document.visibilityState === 'visible';
+  try {
+    if (need && !ui.wake && 'wakeLock' in navigator){
+      ui.wake = await navigator.wakeLock.request('screen');
+      ui.wake.addEventListener('release', () => { ui.wake = null; });
+    } else if (!need && ui.wake){ await ui.wake.release(); ui.wake = null; }
+  } catch(e){ /* z. B. Energiesparmodus */ }
+}
+document.addEventListener('visibilitychange', updateWake);
+
+/* ---------- Rendering ---------- */
+const ICONS = {
+  play:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>',
+  ranking:'<svg viewBox="0 0 24 24"><path d="M6 20V11M12 20V5M18 20v-6"/></svg>',
+  archive:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+  data:'<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>'
+};
+function renderTabs(){
+  const t = [['play','Spielen'],['ranking','Ranking'],['archive','Runden'],['data','Stammdaten']];
+  document.getElementById('tabs').innerHTML = t.map(([k,l]) =>
+    `<button class="${ui.tab===k?'on':''}" data-act="tab" data-v="${k}">${ICONS[k]}${l}</button>`).join('');
+}
+function render(){
+  renderTabs();
+  const app = document.getElementById('app');
+  let html = '';
+  if (ui.tab === 'play') html = renderPlay();
+  else if (ui.tab === 'ranking') html = renderRanking();
+  else if (ui.tab === 'archive') html = renderArchive();
+  else html = renderData();
+  app.innerHTML = html;
+  updateWake();
+}
+function go(tab, sub=null){ ui.tab = tab; ui.sub = sub; render(); window.scrollTo(0,0); }
+
+function installBanner(){
+  const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if (standalone || ui.hideInstall) return '';
+  return `<div class="banner"><b>Bitte zum Home-Bildschirm hinzufügen</b>
+    In Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“. Nur so bleiben die Daten dauerhaft gespeichert und die App läuft offline.
+    <div style="margin-top:6px"><button class="btn ghost sm" data-act="hideInstall">Ausblenden</button></div></div>`;
+}
+function backupHint(){
+  if (!S.rounds.some(r => r.finished)) return '';
+  const days = S.lastBackup ? Math.floor((Date.now() - new Date(S.lastBackup)) / 864e5) : null;
+  if (S.roundsSinceBackup === 0 && days !== null && days < 30) return '';
+  return `<div class="banner"><b>Datensicherung empfohlen</b>
+    ${S.lastBackup ? 'Letzte Sicherung vor ' + days + ' Tagen' : 'Noch keine Sicherung vorhanden'}${S.roundsSinceBackup ? ', seitdem ' + S.roundsSinceBackup + ' neue Runde(n)' : ''}.
+    <div style="margin-top:6px"><button class="btn sm" data-act="export">Jetzt sichern</button></div></div>`;
+}
+
+/* --- Spielen --- */
+function renderPlay(){
+  const r = activeRound();
+  if (!r) return renderSetup();
+  return ui.view === 'card' ? renderCard(r, true) : renderHole(r);
+}
+function initSetup(){
+  const last = [...S.rounds].reverse().find(r => r.finished);
+  const act = S.players.filter(p => !p.archived);
+  ui.setup = {
+    courseId: (last && course(last.courseId)) ? last.courseId : S.courses[0]?.id,
+    date: today(),
+    sel: last ? last.playerIds.filter(id => act.some(p => p.id === id)) : []
+  };
+}
+function renderSetup(){
+  if (!ui.setup) initSetup();
+  const s = ui.setup, act = S.players.filter(p => !p.archived);
+  const chips = act.map(p => {
+    const idx = s.sel.indexOf(p.id);
+    return `<button class="chip ${idx>=0?'on':''}" data-act="togglePlayer" data-id="${p.id}">${idx>=0?`<span class="n">${idx+1}</span>`:''}${esc(p.name)}</button>`;
+  }).join('');
+  const c = course(s.courseId);
+  return `${installBanner()}${backupHint()}
+  <h1>Neue Runde</h1>
+  <div class="card">
+    <label class="f">Platz</label>
+    <select class="in" data-field="setupCourse">${S.courses.map(x => `<option value="${x.id}" ${x.id===s.courseId?'selected':''}>${esc(x.name)} (${x.holes.length} Bahnen)</option>`).join('')}</select>
+    ${c ? `<div class="small muted" style="margin-top:6px">Par gesamt ${c.holes.reduce((a,h)=>a+h.par,0)}</div>` : ''}
+    <label class="f">Datum</label>
+    <input class="in" type="date" value="${s.date}" data-field="setupDate">
+  </div>
+  <h2>Spieler (${s.sel.length} von max. ${MAX_PLAYERS}) – Reihenfolge = Antippreihenfolge</h2>
+  <div class="card">
+    ${act.length ? `<div class="chips">${chips}</div>` : '<div class="muted">Noch keine Spieler angelegt. Füge unten den ersten hinzu.</div>'}
+    <div class="row" style="margin-top:12px">
+      <input class="in" id="newPlayerQuick" placeholder="Neuer Spieler" autocomplete="off" style="flex:2">
+      <button class="btn sec" data-act="quickAdd">Hinzufügen</button>
+    </div>
+  </div>
+  <button class="btn block" data-act="startRound" ${(!c || s.sel.length===0)?'disabled':''}>Runde starten</button>`;
+}
+function renderHole(r){
+  const c = course(r.courseId), i = ui.hole, par = r.pars[i], h = c?.holes[i] || {};
+  const strip = r.pars.map((_, k) =>
+    `<button class="${k===i?'cur':holeDone(r,k)?'done':''}" data-act="gotoHole" data-v="${k}">${k+1}</button>`).join('');
+  const rows = r.playerIds.map(pid => {
+    const v = r.scores[pid][i], st = roundStats(r, pid);
+    return `<div class="prow">
+      <div class="pinfo"><div class="pn">${esc(pname(pid))}</div>
+        <div class="ps">Gesamt ${st.strokes} · <span class="${relClass(st.rel)}">${fmtRel(st.rel)}</span></div></div>
+      <div class="stepper">
+        <button class="step" data-act="dec" data-pid="${pid}" aria-label="weniger">−</button>
+        <button class="val ${v==null?'empty':relClass(v-par)}" data-act="setPar" data-pid="${pid}">${v==null?par:v}</button>
+        <button class="step" data-act="inc" data-pid="${pid}" aria-label="mehr">+</button>
+      </div></div>`;
+  }).join('');
+  const missing = r.playerIds.some(p => r.scores[p][i] == null);
+  const last = i === r.pars.length - 1;
+  return `<div class="holehead">
+      <div><div class="muted small">${esc(c?.name || '')} · ${fmtDate(r.date)}</div><div class="big">Bahn ${i+1}<span class="muted" style="font-size:16px;font-weight:500"> / ${r.pars.length}</span></div></div>
+      <div class="meta"><span class="parpill">Par ${par}</span>${h.len ? `<div class="small muted" style="margin-top:4px">${esc(h.len)} m</div>` : ''}</div>
+    </div>
+    ${h.note ? `<div class="note">${esc(h.note)}</div>` : ''}
+    <div class="strip" id="strip">${strip}</div>
+    <div class="list">${rows}</div>
+    ${missing ? `<button class="btn ghost sm" data-act="fillPar">Leere Felder auf Par setzen</button>` : '<div class="small muted" style="padding:8px 4px">Alle Würfe dieser Bahn erfasst.</div>'}
+    <div class="navbar">
+      <button class="btn sec" data-act="prevHole" ${i===0?'disabled':''}>Zurück</button>
+      <button class="btn sec" data-act="view" data-v="card">Übersicht</button>
+      ${last ? `<button class="btn" data-act="finishRound">Beenden</button>` : `<button class="btn" data-act="nextHole">Weiter</button>`}
+    </div>
+    <div style="text-align:center;margin-top:18px"><button class="btn ghost sm" style="color:var(--danger)" data-act="abortRound">Runde abbrechen</button></div>`;
+}
+function scorecard(r){
+  const head = r.pars.map((_,k) => `<th>${k+1}</th>`).join('');
+  const parRow = r.pars.map(p => `<td class="muted">${p}</td>`).join('');
+  const parSum = r.pars.reduce((a,b)=>a+b,0);
+  const order = [...r.playerIds].sort((a,b) => {
+    const sa = roundStats(r,a), sb = roundStats(r,b);
+    return (sb.played - sa.played) || (sa.rel - sb.rel);
+  });
+  const rows = order.map(pid => {
+    const st = roundStats(r, pid);
+    const cells = r.pars.map((par,k) => { const v = r.scores[pid][k];
+      return `<td class="${v==null?'':v<par?'cg':v>par?'cb':''}">${v ?? '·'}</td>`; }).join('');
+    return `<tr><td class="l">${esc(pname(pid))}</td>${cells}<td class="sum">${st.strokes}</td><td class="sum ${relClass(st.rel)}">${fmtRel(st.rel)}</td></tr>`;
+  }).join('');
+  return `<div class="tw"><table><thead><tr><th class="l">Bahn</th>${head}<th>Σ</th><th>±</th></tr></thead>
+    <tbody><tr><td class="l muted">Par</td>${parRow}<td class="muted">${parSum}</td><td></td></tr>${rows}</tbody></table></div>`;
+}
+function renderCard(r, live){
+  const c = course(r.courseId);
+  return `<h1>Zwischenstand</h1>
+    <div class="muted small" style="margin:-8px 0 10px">${esc(c?.name||'')} · ${fmtDate(r.date)} · grün = unter Par, gelb = über Par</div>
+    ${scorecard(r)}
+    <div class="navbar"><button class="btn" data-act="view" data-v="hole">Zur Bahn ${ui.hole+1}</button></div>`;
+}
+
+/* --- Ranking --- */
+function renderRanking(){
+  if (ui.sub?.type === 'player') return renderPlayerDetail(ui.sub.id);
+  if (!ui.rankCourse || !course(ui.rankCourse)) ui.rankCourse = S.courses[0]?.id;
+  if (!ui.rankPeriod) ui.rankPeriod = 'y' + new Date().getFullYear();
+  if (!ui.rankCourse) return '<h1>Ranking</h1><div class="empty-state">Lege zuerst einen Platz an.</div>';
+  const filters = `<div class="row" style="margin-bottom:12px">
+    <select class="in" data-field="rankCourse">${S.courses.map(c => `<option value="${c.id}" ${c.id===ui.rankCourse?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
+    <select class="in" data-field="rankPeriod">${periods().map(p => `<option value="${p.key}" ${p.key===ui.rankPeriod?'selected':''}>${p.label}</option>`).join('')}</select>
+  </div>
+  <div class="seg"><button class="${ui.rankSeg==='players'?'on':''}" data-act="rankSeg" data-v="players">Spieler</button><button class="${ui.rankSeg==='holes'?'on':''}" data-act="rankSeg" data-v="holes">Bahnen</button></div>`;
+  return `<h1>Ranking</h1>${filters}${ui.rankSeg === 'players' ? renderRankPlayers() : renderRankHoles()}`;
+}
+function renderRankPlayers(){
+  const { ranked, pending, X } = ranking(ui.rankCourse, ui.rankPeriod);
+  if (!ranked.length && !pending.length) return '<div class="empty-state">Für diesen Platz und Zeitraum gibt es noch keine vollständigen Runden.</div>';
+  const item = (e, isRanked) => `<div class="li tap" data-act="openPlayer" data-id="${e.pid}">
+      ${isRanked ? `<div class="rkn ${e.rank<=3?'r'+e.rank:''}">${e.rank}</div>` : `<div class="rkn" style="font-size:12px">${e.n}/${X}</div>`}
+      <div class="grow"><div class="pn">${esc(pname(e.pid))}</div>
+        <div class="ps">${e.n} Runde${e.n===1?'':'n'} · Bestleistung <span class="${relClass(e.best.rel)}">${fmtRel(e.best.rel)}</span> (${fmtDate(e.best.round.date)})</div></div>
+      <div><div class="rkv ${relClass(isRanked?e.avgBest:e.avgAll)}">${fmtRel(isRanked?e.avgBest:e.avgAll, true)}</div>
+        <div class="small muted" style="text-align:right">${isRanked ? 'Ø beste '+X : 'Ø alle'}</div></div>
+    </div>`;
+  return `<div class="small muted" style="margin-bottom:8px">Gewertet wird der Durchschnitt der besten ${X} Runden relativ zum Par. Wer weniger Runden hat, erscheint unten ohne Platzierung.</div>
+    ${ranked.length ? `<div class="list">${ranked.map(e => item(e,true)).join('')}</div>` : ''}
+    ${pending.length ? `<h2>Noch nicht gewertet (unter ${X} Runden)</h2><div class="list">${pending.map(e => item(e,false)).join('')}</div>` : ''}`;
+}
+function distBar(s){
+  const t = s.b + s.p + s.o; if (!t) return '';
+  return `<div class="dist" title="unter / gleich / über Par">
+    <i style="width:${s.b/t*100}%;background:var(--good)"></i><i style="width:${s.p/t*100}%;background:var(--line)"></i><i style="width:${s.o/t*100}%;background:var(--bad)"></i></div>`;
+}
+function holeTable(stats){
+  const rows = stats.map(s => `<tr><td class="l"><b>${s.i+1}</b></td><td>${s.par}</td><td>${fmtNum(s.avg,2)}</td>
+    <td class="sum ${relClass(s.rel)}">${fmtRel(s.rel,true)}</td><td>${distBar(s)}</td><td class="muted">${s.cnt}</td></tr>`).join('');
+  return `<div class="tw"><table><thead><tr><th class="l">Bahn</th><th>Par</th><th>Ø Würfe</th><th>± Par</th><th>Verteilung</th><th>n</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="small muted">Verteilung: grün unter Par, grau Par, gelb über Par. n = Anzahl gewerteter Würfe.</div>`;
+}
+function renderRankHoles(){
+  const stats = holeStats(ui.rankCourse, ui.rankPeriod);
+  if (!stats.some(s => s.cnt)) return '<div class="empty-state">Noch keine Daten für diesen Zeitraum.</div>';
+  const valid = stats.filter(s => s.cnt);
+  const hard = [...valid].sort((a,b) => b.rel - a.rel)[0], easy = [...valid].sort((a,b) => a.rel - b.rel)[0];
+  const suspicious = valid.filter(s => s.cnt >= 10 && Math.abs(s.rel) >= 0.8);
+  return `<div class="card"><div class="row">
+      <div><div class="small muted">Schwerste Bahn</div><div style="font-size:20px;font-weight:800">Bahn ${hard.i+1} <span class="bad" style="font-size:15px">${fmtRel(hard.rel,true)}</span></div></div>
+      <div><div class="small muted">Leichteste Bahn</div><div style="font-size:20px;font-weight:800">Bahn ${easy.i+1} <span class="${relClass(easy.rel)}" style="font-size:15px">${fmtRel(easy.rel,true)}</span></div></div>
+    </div>
+    ${suspicious.length ? `<div class="small" style="margin-top:10px">Prüfenswert: Bei Bahn ${suspicious.map(s=>s.i+1).join(', ')} weicht der Schnitt deutlich vom Par ab. Vielleicht passt das eingetragene Par nicht.</div>` : ''}
+  </div>${holeTable(stats)}`;
+}
+function renderPlayerDetail(pid){
+  const res = playerResults(ui.rankCourse, ui.rankPeriod)[pid] || [];
+  const byDate = [...res].sort((a,b) => b.round.date.localeCompare(a.round.date) || b.round.createdAt - a.round.createdAt);
+  const avg = res.length ? res.reduce((s,x)=>s+x.rel,0)/res.length : null;
+  const best = res.length ? Math.min(...res.map(x=>x.rel)) : null;
+  const last5 = byDate.slice(0,5), avg5 = last5.length ? last5.reduce((s,x)=>s+x.rel,0)/last5.length : null;
+  const stats = holeStats(ui.rankCourse, ui.rankPeriod, pid);
+  return `<button class="btn ghost" data-act="back">‹ Ranking</button>
+    <h1>${esc(pname(pid))}</h1>
+    <div class="muted small" style="margin:-8px 0 12px">${esc(course(ui.rankCourse)?.name||'')} · ${periods().find(p=>p.key===ui.rankPeriod)?.label||''}</div>
+    <div class="card"><div class="row" style="text-align:center">
+      <div><div class="small muted">Runden</div><div style="font-size:22px;font-weight:800">${res.length}</div></div>
+      <div><div class="small muted">Ø alle</div><div style="font-size:22px;font-weight:800" class="${relClass(avg)}">${fmtRel(avg,true)}</div></div>
+      <div><div class="small muted">Ø letzte 5</div><div style="font-size:22px;font-weight:800" class="${relClass(avg5)}">${fmtRel(avg5,true)}</div></div>
+      <div><div class="small muted">Beste</div><div style="font-size:22px;font-weight:800" class="${relClass(best)}">${fmtRel(best)}</div></div>
+    </div></div>
+    <h2>Runden</h2>
+    ${byDate.length ? `<div class="list">${byDate.map(x => `<div class="li tap" data-act="openRound" data-id="${x.round.id}">
+      <div class="grow">${fmtDate(x.round.date)}<div class="ps">${x.strokes} Würfe</div></div>
+      <div class="rkv ${relClass(x.rel)}" style="font-size:18px">${fmtRel(x.rel)}</div><span class="chev">›</span></div>`).join('')}</div>` : '<div class="muted">Keine vollständigen Runden.</div>'}
+    <h2>Stärken und Schwächen nach Bahn</h2>
+    ${stats.some(s=>s.cnt) ? holeTable(stats) : '<div class="muted">Noch keine Daten.</div>'}`;
+}
+
+/* --- Runden-Archiv --- */
+function renderArchive(){
+  if (ui.sub?.type === 'round') return renderRoundDetail(ui.sub.id);
+  const rounds = [...S.rounds].sort((a,b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  if (!rounds.length) return '<h1>Runden</h1><div class="empty-state">Noch keine Runden gespielt.</div>';
+  return `<h1>Runden</h1><div class="list">${rounds.map(r => {
+    const c = course(r.courseId);
+    const leader = [...r.playerIds].map(p => ({p, st: roundStats(r,p)})).filter(x=>x.st.played).sort((a,b) => (b.st.played-a.st.played)||(a.st.rel-b.st.rel))[0];
+    return `<div class="li tap" data-act="openRound" data-id="${r.id}">
+      <div class="grow"><div class="pn" style="font-size:16px">${fmtDate(r.date)} · ${esc(c?.name || 'Gelöschter Platz')}</div>
+      <div class="ps">${r.playerIds.length} Spieler${leader ? ' · vorne: ' + esc(pname(leader.p)) + ' ' + fmtRel(leader.st.rel) : ''}</div></div>
+      ${!r.finished ? '<span class="badge live">läuft</span>' : !roundComplete(r) ? '<span class="badge">unvollständig</span>' : ''}
+      <span class="chev">›</span></div>`;
+  }).join('')}</div>`;
+}
+function renderRoundDetail(id){
+  const r = S.rounds.find(x => x.id === id);
+  if (!r) { ui.sub = null; return renderArchive(); }
+  const c = course(r.courseId);
+  const fresh = ui.sub.fresh;
+  return `<button class="btn ghost" data-act="back">‹ ${ui.sub.from === 'ranking' ? 'Zurück' : 'Runden'}</button>
+    <h1>${fresh ? 'Runde beendet' : 'Runde vom ' + fmtDate(r.date)}</h1>
+    <div class="muted small" style="margin:-8px 0 10px">${esc(c?.name || '')} · ${fmtDate(r.date)}${r.finished && !roundComplete(r) ? ' · unvollständig, zählt nicht im Ranking' : ''}</div>
+    ${fresh ? backupHint() : ''}
+    ${scorecard(r)}
+    <div class="navbar">
+      ${r.finished ? `<button class="btn sec" data-act="reopenRound" data-id="${r.id}">Korrigieren</button>` : `<button class="btn" data-act="resumeRound" data-id="${r.id}">Fortsetzen</button>`}
+      <button class="btn danger" data-act="deleteRound" data-id="${r.id}">Löschen</button>
+    </div>`;
+}
+
+/* --- Stammdaten --- */
+function renderData(){
+  if (ui.sub?.type === 'course') return renderCourseEdit(ui.sub.id);
+  const players = [...S.players].sort((a,b) => (a.archived?1:0)-(b.archived?1:0) || a.name.localeCompare(b.name,'de'));
+  const persisted = ui.persisted;
+  return `<h1>Stammdaten</h1>
+  <h2>Plätze</h2>
+  <div class="list">${S.courses.map(c => `<div class="li tap" data-act="openCourse" data-id="${c.id}">
+      <div class="grow"><div class="pn" style="font-size:16px">${esc(c.name)}</div><div class="ps">${c.holes.length} Bahnen · Par ${c.holes.reduce((a,h)=>a+h.par,0)}</div></div><span class="chev">›</span></div>`).join('')}
+    <div class="li tap" data-act="addCourse"><div class="grow" style="color:var(--accent);font-weight:600">Neuer Platz</div></div></div>
+  <h2>Spieler</h2>
+  <div class="list">${players.map(p => `<div class="li">
+      <div class="grow"><div class="pn" style="font-size:16px;${p.archived?'color:var(--muted)':''}">${esc(p.name)}</div>${p.archived?'<div class="ps">archiviert, erscheint nicht bei neuen Runden</div>':''}</div>
+      <button class="btn ghost sm" data-act="renamePlayer" data-id="${p.id}">Umbenennen</button>
+      <button class="btn ghost sm" data-act="archivePlayer" data-id="${p.id}">${p.archived?'Aktivieren':S.rounds.some(r=>r.playerIds.includes(p.id))?'Archivieren':'Löschen'}</button>
+    </div>`).join('')}
+    <div class="li"><input class="in" id="newPlayer" placeholder="Name des Spielers" autocomplete="off"><button class="btn sec" data-act="addPlayer">Anlegen</button></div></div>
+  <h2>Wertung</h2>
+  <div class="card"><div class="li" style="padding:0;border:0">
+    <div class="grow">Beste Runden pro Zeitraum<div class="ps">Ranking = Durchschnitt der besten X Runden</div></div>
+    <div class="stepnum"><button class="step" data-act="bestX" data-v="-1">−</button><b>${S.settings.bestX}</b><button class="step" data-act="bestX" data-v="1">+</button></div>
+  </div></div>
+  <h2>Datensicherung</h2>
+  <div class="card">
+    <div class="small muted" style="margin-bottom:10px">Letzte Sicherung: ${S.lastBackup ? fmtDate(S.lastBackup.slice(0,10)) : 'noch keine'} · ${S.rounds.length} Runden gespeichert${persisted === true ? ' · Speicher dauerhaft' : ''}</div>
+    <button class="btn block" data-act="export">Sicherung exportieren</button>
+    <div class="small muted" style="margin:6px 2px 12px">Auf dem iPhone öffnet sich das Teilen-Menü. „In Dateien sichern“ wählen, am besten in iCloud Drive.</div>
+    <button class="btn sec block" data-act="import">Sicherung laden</button>
+    <div class="small muted" style="margin:6px 2px 12px">Ersetzt alle Daten auf diesem Gerät durch den Stand der Sicherung.</div>
+    <button class="btn sec block" data-act="csv">Alle Würfe als CSV (Excel)</button>
+  </div>
+  <div class="small muted" style="text-align:center;margin-top:20px">Discgolf Scorer · Daten bleiben nur auf diesem Gerät</div>`;
+}
+function renderCourseEdit(id){
+  const c = course(id); if (!c){ ui.sub = null; return renderData(); }
+  const used = S.rounds.some(r => r.courseId === id);
+  const holes = c.holes.map((h,i) => `<div class="card" style="padding:12px">
+      <div class="hgrid"><div class="hn">${i+1}</div>
+        <div class="row" style="align-items:center">
+          <div class="stepnum"><button class="step" data-act="par" data-i="${i}" data-v="-1">−</button><b>${h.par}</b><button class="step" data-act="par" data-i="${i}" data-v="1">+</button></div>
+          <input class="in" inputmode="numeric" placeholder="Länge m" value="${esc(h.len)}" data-field="hole" data-k="len" data-i="${i}" style="max-width:110px">
+        </div>
+        <div></div><input class="in" placeholder="Notiz (z. B. Abwurf links am Baum)" value="${esc(h.note)}" data-field="hole" data-k="note" data-i="${i}">
+      </div></div>`).join('');
+  return `<button class="btn ghost" data-act="back">‹ Stammdaten</button>
+    <h1>Platz bearbeiten</h1>
+    <div class="card">
+      <label class="f">Name</label><input class="in" value="${esc(c.name)}" data-field="courseName">
+      <label class="f">Anzahl Bahnen</label>
+      ${used ? `<div>${c.holes.length} <span class="small muted">(fest, weil schon Runden auf diesem Platz gespielt wurden)</span></div>`
+        : `<div class="stepnum"><button class="step" data-act="holeCount" data-v="-1">−</button><b>${c.holes.length}</b><button class="step" data-act="holeCount" data-v="1">+</button></div>`}
+      <div class="small muted" style="margin-top:10px">Par gesamt ${c.holes.reduce((a,h)=>a+h.par,0)}. Geänderte Par-Werte gelten für neue Runden, bereits gespielte Runden behalten ihr damaliges Par.</div>
+    </div>
+    <h2>Bahnen: Par, Länge, Notiz</h2>
+    ${holes}
+    ${used ? '' : `<button class="btn danger block" data-act="deleteCourse" style="margin-top:10px">Platz löschen</button>`}`;
+}
+
+/* ---------- Aktionen ---------- */
+function startRound(){
+  const s = ui.setup, c = course(s.courseId);
+  if (!c || !s.sel.length) return;
+  const r = { id: uid(), courseId: c.id, date: s.date || today(), createdAt: Date.now(),
+    pars: c.holes.map(h => h.par), playerIds: [...s.sel], scores: {}, finished: false };
+  r.playerIds.forEach(p => r.scores[p] = r.pars.map(() => null));
+  S.rounds.push(r); S.activeRoundId = r.id; save();
+  ui.hole = 0; ui.view = 'hole'; ui.setup = null; render();
+}
+function addPlayer(name){
+  name = (name || '').trim(); if (!name) return null;
+  if (S.players.some(p => p.name.toLowerCase() === name.toLowerCase() && !p.archived)){ toast('Diesen Namen gibt es schon'); return null; }
+  const p = { id: uid(), name }; S.players.push(p); save(); return p;
+}
+function firstOpenHole(r){ const i = r.pars.findIndex((_,k) => !holeDone(r,k)); return i < 0 ? r.pars.length - 1 : i; }
+function finishRound(){
+  const r = activeRound(); if (!r) return;
+  const open = r.pars.map((_,k) => k).filter(k => !holeDone(r,k));
+  if (open.length && !confirm(`Bei Bahn ${open.map(k=>k+1).join(', ')} fehlen noch Würfe.\nTrotzdem beenden? Unvollständige Spieler zählen dann nicht im Ranking.`)) return;
+  if (!open.length && !confirm('Runde beenden und speichern?')) return;
+  r.finished = true; r.finishedAt = Date.now(); S.activeRoundId = null; S.roundsSinceBackup++; save();
+  ui.view = 'hole'; go('archive', { type: 'round', id: r.id, fresh: true });
+}
+async function shareOrDownload(blob, name){
+  const file = new File([blob], name, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })){
+    try { await navigator.share({ files: [file], title: name }); return true; }
+    catch(e){ if (e.name === 'AbortError') return false; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+  return true;
+}
+async function exportJSON(){
+  const payload = { app: 'discgolf-scorer', format: 1, exportedAt: new Date().toISOString(), data: S };
+  const ok = await shareOrDownload(new Blob([JSON.stringify(payload)], { type: 'application/json' }), `discgolf-sicherung-${today()}.json`);
+  if (ok){ S.lastBackup = new Date().toISOString(); S.roundsSinceBackup = 0; save(); toast('Sicherung erstellt'); render(); }
+}
+async function exportCSV(){
+  const lines = [['Datum','Platz','Spieler','Bahn','Par','Würfe','Differenz'].join(';')];
+  [...S.rounds].sort((a,b) => a.date.localeCompare(b.date)).forEach(r => {
+    r.playerIds.forEach(p => r.pars.forEach((par,i) => { const v = r.scores[p][i]; if (v == null) return;
+      lines.push([fmtDate(r.date), course(r.courseId)?.name || '', pname(p), i+1, par, v, v-par].map(x => `"${String(x).replace(/"/g,'""')}"`).join(';')); }));
+  });
+  await shareOrDownload(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv' }), `discgolf-wuerfe-${today()}.csv`);
+}
+function importJSON(file){
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const p = JSON.parse(fr.result);
+      if (p.app !== 'discgolf-scorer' || !p.data || !Array.isArray(p.data.rounds)) throw new Error('Keine Discgolf-Sicherung');
+      if (!confirm(`Sicherung vom ${fmtDate(p.exportedAt)} mit ${p.data.rounds.length} Runden und ${p.data.players.length} Spielern laden?\n\nAlle aktuellen Daten auf diesem Gerät werden ersetzt.`)) return;
+      S = p.data; migrate(); S.lastBackup = p.exportedAt; S.roundsSinceBackup = 0; save();
+      ui.setup = null; ui.sub = null; toast('Sicherung geladen'); render();
+    } catch(e){ alert('Die Datei konnte nicht gelesen werden: ' + e.message); }
+  };
+  fr.readAsText(file);
+}
+
+document.getElementById('importFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) importJSON(f); e.target.value = ''; });
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const a = b.dataset.act, r = activeRound();
+  switch (a){
+    case 'tab': ui.sub = null; go(b.dataset.v); break;
+    case 'back': {
+      if (ui.sub?.from === 'ranking'){ ui.tab = 'ranking'; ui.sub = ui.sub.prev || null; render(); }
+      else { ui.sub = null; render(); }
+      window.scrollTo(0,0); break;
+    }
+    case 'hideInstall': ui.hideInstall = true; render(); break;
+    /* Setup */
+    case 'togglePlayer': {
+      const s = ui.setup, id = b.dataset.id, i = s.sel.indexOf(id);
+      if (i >= 0) s.sel.splice(i,1);
+      else if (s.sel.length >= MAX_PLAYERS) toast(`Maximal ${MAX_PLAYERS} Spieler`);
+      else s.sel.push(id);
+      render(); break;
+    }
+    case 'quickAdd': {
+      const inp = document.getElementById('newPlayerQuick'); const p = addPlayer(inp.value);
+      if (p){ if (ui.setup.sel.length < MAX_PLAYERS) ui.setup.sel.push(p.id); render(); }
+      break;
+    }
+    case 'startRound': startRound(); break;
+    /* Bahn */
+    case 'inc': case 'dec': case 'setPar': {
+      if (!r) break; const pid = b.dataset.pid, par = r.pars[ui.hole], cur = r.scores[pid][ui.hole];
+      let v = cur;
+      if (a === 'inc') v = cur == null ? par + 1 : Math.min(20, cur + 1);
+      if (a === 'dec') v = cur == null ? par - 1 : Math.max(1, cur - 1);
+      if (a === 'setPar') v = cur == null ? par : cur;
+      r.scores[pid][ui.hole] = v; save(); render(); break;
+    }
+    case 'fillPar': if (r){ r.playerIds.forEach(p => { if (r.scores[p][ui.hole] == null) r.scores[p][ui.hole] = r.pars[ui.hole]; }); save(); render(); } break;
+    case 'nextHole': if (r){ ui.hole = Math.min(r.pars.length-1, ui.hole+1); render(); window.scrollTo(0,0); scrollStrip(); } break;
+    case 'prevHole': ui.hole = Math.max(0, ui.hole-1); render(); window.scrollTo(0,0); scrollStrip(); break;
+    case 'gotoHole': ui.hole = +b.dataset.v; ui.view = 'hole'; render(); scrollStrip(); break;
+    case 'view': ui.view = b.dataset.v; render(); window.scrollTo(0,0); if (ui.view==='hole') scrollStrip(); break;
+    case 'finishRound': finishRound(); break;
+    case 'abortRound':
+      if (r && confirm('Runde wirklich abbrechen? Alle Eingaben dieser Runde werden gelöscht.')){
+        S.rounds = S.rounds.filter(x => x.id !== r.id); S.activeRoundId = null; save(); ui.setup = null; render();
+      } break;
+    /* Archiv */
+    case 'openRound': {
+      const from = ui.tab === 'ranking' ? { from: 'ranking', prev: ui.sub } : {};
+      ui.tab = 'archive'; ui.sub = { type: 'round', id: b.dataset.id, ...from }; render(); window.scrollTo(0,0); break;
+    }
+    case 'resumeRound': case 'reopenRound': {
+      const x = S.rounds.find(y => y.id === b.dataset.id); if (!x) break;
+      if (activeRound() && activeRound().id !== x.id){ alert('Es läuft bereits eine andere Runde. Beende sie zuerst.'); break; }
+      if (a === 'reopenRound' && !confirm('Runde zum Korrigieren wieder öffnen?')) break;
+      x.finished = false; S.activeRoundId = x.id; save();
+      ui.hole = firstOpenHole(x); if (a === 'reopenRound') ui.hole = 0; ui.view = 'hole'; go('play'); break;
+    }
+    case 'deleteRound': {
+      const x = S.rounds.find(y => y.id === b.dataset.id); if (!x) break;
+      if (!confirm(`Runde vom ${fmtDate(x.date)} endgültig löschen?`)) break;
+      S.rounds = S.rounds.filter(y => y.id !== x.id); if (S.activeRoundId === x.id) S.activeRoundId = null; save();
+      ui.sub = null; render(); toast('Runde gelöscht'); break;
+    }
+    /* Ranking */
+    case 'rankSeg': ui.rankSeg = b.dataset.v; render(); break;
+    case 'openPlayer': ui.sub = { type: 'player', id: b.dataset.id }; render(); window.scrollTo(0,0); break;
+    /* Stammdaten */
+    case 'openCourse': ui.sub = { type: 'course', id: b.dataset.id }; render(); window.scrollTo(0,0); break;
+    case 'addCourse': {
+      const name = prompt('Name des neuen Platzes:'); if (!name || !name.trim()) break;
+      const c = { id: uid(), name: name.trim(), holes: Array.from({length:9}, () => ({par:3, len:'', note:''})) };
+      S.courses.push(c); save(); ui.sub = { type: 'course', id: c.id }; render(); break;
+    }
+    case 'deleteCourse': {
+      const c = course(ui.sub.id); if (!c || !confirm(`Platz „${c.name}“ löschen?`)) break;
+      S.courses = S.courses.filter(x => x.id !== c.id); save(); ui.sub = null; render(); break;
+    }
+    case 'par': {
+      const c = course(ui.sub.id), h = c.holes[+b.dataset.i];
+      h.par = Math.min(9, Math.max(2, h.par + (+b.dataset.v))); save(); render(); break;
+    }
+    case 'holeCount': {
+      const c = course(ui.sub.id), n = c.holes.length + (+b.dataset.v);
+      if (n < 1 || n > 36) break;
+      if (n > c.holes.length) c.holes.push({par:3, len:'', note:''}); else c.holes.pop();
+      save(); render(); break;
+    }
+    case 'addPlayer': { const inp = document.getElementById('newPlayer'); if (addPlayer(inp.value)) render(); break; }
+    case 'renamePlayer': {
+      const p = player(b.dataset.id); const n = prompt('Neuer Name:', p.name);
+      if (n && n.trim()){ p.name = n.trim(); save(); render(); } break;
+    }
+    case 'archivePlayer': {
+      const p = player(b.dataset.id), used = S.rounds.some(r => r.playerIds.includes(p.id));
+      if (p.archived) p.archived = false;
+      else if (used) p.archived = true;
+      else if (confirm(`${p.name} löschen?`)) S.players = S.players.filter(x => x.id !== p.id);
+      else break;
+      ui.setup = null; save(); render(); break;
+    }
+    case 'bestX': S.settings.bestX = Math.min(20, Math.max(1, S.settings.bestX + (+b.dataset.v))); save(); render(); break;
+    case 'export': exportJSON(); break;
+    case 'import': document.getElementById('importFile').click(); break;
+    case 'csv': exportCSV(); break;
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target, f = t.dataset.field; if (!f) return;
+  if (f === 'setupCourse'){ ui.setup.courseId = t.value; render(); }
+  else if (f === 'setupDate'){ ui.setup.date = t.value || today(); }
+  else if (f === 'rankCourse'){ ui.rankCourse = t.value; render(); }
+  else if (f === 'rankPeriod'){ ui.rankPeriod = t.value; render(); }
+  else if (f === 'courseName'){ const c = course(ui.sub.id); if (t.value.trim()){ c.name = t.value.trim(); save(); } }
+  else if (f === 'hole'){ const c = course(ui.sub.id); c.holes[+t.dataset.i][t.dataset.k] = t.value.trim(); save(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'newPlayerQuick') document.querySelector('[data-act="quickAdd"]')?.click();
+  if (e.target.id === 'newPlayer') document.querySelector('[data-act="addPlayer"]')?.click();
+});
+function scrollStrip(){
+  const s = document.getElementById('strip'), cur = s?.querySelector('.cur');
+  if (s && cur) s.scrollLeft = cur.offsetLeft - s.clientWidth/2 + cur.clientWidth/2;
+}
+
+/* ---------- Start ---------- */
+load();
+if (activeRound()){ ui.hole = firstOpenHole(activeRound()); }
+render(); scrollStrip();
+if (navigator.storage && navigator.storage.persist){
+  navigator.storage.persist().then(p => { ui.persisted = p; }).catch(()=>{});
+}
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
