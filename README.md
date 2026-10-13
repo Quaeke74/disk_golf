@@ -49,7 +49,7 @@ Jedes Gerät hat seinen eigenen Datenstand, es gibt keine automatische Synchroni
 ## Updates einspielen
 
 1. Die geänderten Dateien hochladen und die alten überschreiben.
-2. In `sw.js` die Versionsnummer in der Zeile `const CACHE = 'dg-scorer-v2';` um eins erhöhen. Sonst zeigt das Handy weiter die alte Version an.
+2. In `sw.js` die Versionsnummer in der Zeile `const CACHE = 'dg-scorer-v3';` um eins erhöhen. Sonst zeigt das Handy weiter die alte Version an.
 3. Auf dem Handy die App einmal öffnen, schließen und wieder öffnen.
 
 Die gespeicherten Runden bleiben bei einem Update erhalten.
