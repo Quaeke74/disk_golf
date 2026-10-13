@@ -1,5 +1,5 @@
 // Offline-Cache für Discgolf Scorer. Bei Änderungen an der App die Versionsnummer erhöhen.
-const CACHE = 'dg-scorer-v2';
+const CACHE = 'dg-scorer-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

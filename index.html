@@ -117,11 +117,15 @@ nav#tabs button.on{color:var(--accent)}
   width:52px;height:52px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--text);
   font:500 28px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center
 }
-.step:active{transform:scale(.94)}
+.step:active,.val:active{transform:scale(.94)}
+.step:disabled{opacity:.35}
 .val{
-  width:56px;height:56px;border-radius:14px;border:2px solid var(--line);background:var(--card);
-  font:800 26px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text)
+  width:68px;height:62px;border-radius:14px;border:2px solid var(--line);background:var(--card);
+  font:800 26px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--text);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0
 }
+.val small{font:700 11px/1 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;letter-spacing:.02em}
+.step.plus{background:var(--accent);color:var(--accent-ink)}
 .val.empty{color:var(--muted);border-style:dashed;font-weight:500}
 .val.good{background:var(--good-soft);border-color:var(--good);color:var(--good)}
 .val.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
@@ -199,6 +203,12 @@ function fmtRel(x, dec){
 }
 const fmtNum = (x, d=1) => x == null ? '–' : x.toFixed(d).replace('.', ',');
 const relClass = x => x < 0 ? 'good' : x > 0 ? 'bad' : '';
+function holeLabel(v, par){
+  if (v == null) return 'Par ' + par;
+  const d = v - par;
+  if (v === 1) return 'Ass';
+  return ({'-3':'Albatros','-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Doppel-B.'})[d] || ((d>0?'+':'−') + Math.abs(d));
+}
 function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200); }
 
 /* ---------- Daten ---------- */
@@ -401,9 +411,9 @@ function renderHole(r){
       <div class="pinfo"><div class="pn">${esc(pname(pid))}</div>
         <div class="ps">Gesamt ${st.strokes} · <span class="${relClass(st.rel)}">${fmtRel(st.rel)}</span></div></div>
       <div class="stepper">
-        <button class="step" data-act="dec" data-pid="${pid}" aria-label="weniger">−</button>
-        <button class="val ${v==null?'empty':relClass(v-par)}" data-act="setPar" data-pid="${pid}">${v==null?par:v}</button>
-        <button class="step" data-act="inc" data-pid="${pid}" aria-label="mehr">+</button>
+        <button class="step" data-act="dec" data-pid="${pid}" aria-label="Wurf zurücknehmen" ${v==null?'disabled':''}>−</button>
+        <button class="val ${v==null?'empty':relClass(v-par)}" data-act="inc" data-pid="${pid}" aria-label="Wurf zählen">${v==null?0:v}<small>${holeLabel(v,par)}</small></button>
+        <button class="step plus" data-act="inc" data-pid="${pid}" aria-label="Wurf zählen">+</button>
       </div></div>`;
   }).join('');
   const missing = r.playerIds.some(p => r.scores[p][i] == null);
@@ -415,7 +425,7 @@ function renderHole(r){
     ${h.note ? `<div class="note">${esc(h.note)}</div>` : ''}
     <div class="strip" id="strip">${strip}</div>
     <div class="list">${rows}</div>
-    ${missing ? `<button class="btn ghost sm" data-act="fillPar">Leere Felder auf Par setzen</button>` : '<div class="small muted" style="padding:8px 4px">Alle Würfe dieser Bahn erfasst.</div>'}
+    ${missing ? `<button class="btn ghost sm" data-act="fillPar">Fehlende Spieler auf Par setzen</button>` : '<div class="small muted" style="padding:8px 4px">Alle Würfe dieser Bahn erfasst.</div>'}
     <div class="navbar">
       <button class="btn sec" data-act="prevHole" ${i===0?'disabled':''}>Zurück</button>
       <button class="btn sec" data-act="view" data-v="card">Übersicht</button>
@@ -701,12 +711,11 @@ document.addEventListener('click', e => {
     }
     case 'startRound': startRound(); break;
     /* Bahn */
-    case 'inc': case 'dec': case 'setPar': {
-      if (!r) break; const pid = b.dataset.pid, par = r.pars[ui.hole], cur = r.scores[pid][ui.hole];
-      let v = cur;
-      if (a === 'inc') v = cur == null ? par + 1 : Math.min(20, cur + 1);
-      if (a === 'dec') v = cur == null ? par - 1 : Math.max(1, cur - 1);
-      if (a === 'setPar') v = cur == null ? par : cur;
+    case 'inc': case 'dec': {
+      if (!r) break; const pid = b.dataset.pid, cur = r.scores[pid][ui.hole];
+      let v;
+      if (a === 'inc') v = cur == null ? 1 : Math.min(20, cur + 1);
+      else v = (cur == null || cur <= 1) ? null : cur - 1;
       r.scores[pid][ui.hole] = v; save(); render(); break;
     }
     case 'fillPar': if (r){ r.playerIds.forEach(p => { if (r.scores[p][ui.hole] == null) r.scores[p][ui.hole] = r.pars[ui.hole]; }); save(); render(); } break;
